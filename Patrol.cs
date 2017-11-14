@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,19 +10,29 @@ public class Patrol : MonoBehaviour {
     private Vector3 startPosition;
     private Vector3 startDirection;
     private Vector3 pastPosition;
+    private float pastRotation; //pepperがどっち向いてるか
     private float pepperSpeed = 2f;
     private float timer; //TimerSetにて活動限界を設定
     private bool timeOut = false;
- 
+
+    public class JSONClass
+    {
+        public double x;
+        public double y;
+        public double theta;
+    }
+
 
     void Start()
     {
         agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         //startPosition = agent.transform.position;
         // TODO ここTangoから入力
-        startPosition.Set(-3.5f, 0f, 0f);
+        startPosition.Set(3.4f, 0f, -1.55f);
         agent.transform.position = startPosition;
         pastPosition = startPosition;
+        // Tangoから向きをとれるならそれでも良い
+        pastRotation = agent.transform.eulerAngles.y;
         startDirection = agent.transform.forward;
 
         // 初期設定
@@ -72,12 +83,6 @@ public class Patrol : MonoBehaviour {
 
     }
 
-    void GoForIt()
-    {
-        agent.destination = points[destPoint].position;
-    }
-
-
     void GoToGoal()
     {
         agent.destination = startPosition;
@@ -104,10 +109,22 @@ public class Patrol : MonoBehaviour {
 
         // agentが目的地に着いたら待機して
         // pepperとagentの距離が小さければGotoNextPoint、大きければGoForIt
-        if (agent.remainingDistance < 0.7f && destPoint + 1 <= points.Count + 2)
+        if (agent.remainingDistance < 0.5f && destPoint + 1 <= points.Count + 2)
         {
             Debug.Log("Reached");
+            Debug.Log(pastRotation);
             Debug.Log(agent.transform.position - pastPosition);
+
+            // pepperの座標系に合わせてMoveToへの引数を変換
+            double pepperX = (agent.transform.position - pastPosition).x * (Math.Cos((pastRotation) * (Math.PI / 180)))
+                - (agent.transform.position - pastPosition).z * Math.Sin((pastRotation) * (Math.PI / 180));
+            double pepperY = (agent.transform.position - pastPosition).x * (Math.Sin((pastRotation) * (Math.PI / 180)))
+                + (agent.transform.position - pastPosition).z * Math.Cos((pastRotation) * (Math.PI / 180));
+            Debug.Log(pepperX + ", " + pepperY);
+
+            Debug.Log(SetJSON(pepperX, pepperY, pastRotation));
+
+            pastRotation = agent.transform.eulerAngles.y;
             pastPosition = agent.transform.position;
             GotoNextPoint();
         }
@@ -119,7 +136,19 @@ public class Patrol : MonoBehaviour {
             agent.speed = 0f;
             // TODO ここで現在位置をもらう
             //agent.transform.position = agent.transform.position - new Vector3(0.3f, 0f, 0f);
+            Debug.Log(pastRotation);
             Debug.Log(agent.transform.position - pastPosition);
+
+            // pepperの座標系に合わせてMoveToへの引数を変換
+            float pepperX = (float)((agent.transform.position - pastPosition).x * (Math.Cos((pastRotation) * (Math.PI / 180)))
+                - (agent.transform.position - pastPosition).z * Math.Sin((pastRotation) * (Math.PI / 180)));
+            float pepperY = (float)((agent.transform.position - pastPosition).x * (Math.Sin((pastRotation) * (Math.PI / 180)))
+                + (agent.transform.position - pastPosition).z * Math.Cos((pastRotation) * (Math.PI / 180)));
+            Debug.Log(pepperX + ", " + pepperY);
+
+            Debug.Log(SetJSON(pepperX, pepperY, pastRotation));
+
+            pastRotation = agent.transform.eulerAngles.y;
             pastPosition = agent.transform.position;
             TimerSet();
             agent.speed = pepperSpeed;
@@ -132,5 +161,15 @@ public class Patrol : MonoBehaviour {
             destPoint = 0;
             Start();
         }
+    }
+
+    public String SetJSON(double x, double y, double theta)
+    {
+        JSONClass unityObject = new JSONClass();
+        unityObject.x = x;
+        unityObject.y = y;
+        unityObject.theta = theta;
+        string json = JsonUtility.ToJson(unityObject);
+        return json;
     }
 }
