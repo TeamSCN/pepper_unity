@@ -8,21 +8,30 @@ using UnityEngine.Networking;
 
 public class Client : MonoBehaviour
 {
-    /*
+    
         // Use this for initialization
         void Start () {
+        
             //ここにpepperのURIを指定
-            String uri = "http://192.168.1.140:8000/";
-            //String uri = "http://www.yamanjo.net/knowledge/internet/internet_09.html";
-            //JSONを記述
-            String content = "{'x':1.0,'y':0.0,'theta':0.0}";
-            Debug.Log(content);
+            String uri = "http://192.168.1.140:8001";
+        //String uri = "http://www.yamanjo.net/knowledge/internet/internet_09.html";
+        //JSONを記述
+        //String content = "{'x':0.0, 'y':0.0, 'theta':0.0, 'stop_flg':0}";
+        LitJson.JsonData content = new LitJson.JsonData();
+        content["x"] = 1.0;
+        content["y"] = 0.0;
+        content["theta"] = 0.0;
+        content["stop_flg"] = 0.0;
+        Debug.Log(content);
+        string postJsonStr = content.ToJson();
+        byte[] postBytes = Encoding.Default.GetBytes(postJsonStr);
 
-            WebClient webClient = new WebClient();
+        WebClient webClient = new WebClient();
             webClient.Headers[HttpRequestHeader.ContentType] = "application/json;charset=UTF-8";
             webClient.Headers[HttpRequestHeader.Accept] = "application/json";
             webClient.Encoding = Encoding.UTF8;
-            string response = webClient.UploadString(new Uri(uri), content);
+            
+            byte[] response = webClient.UploadData(new Uri(uri), "POST", postBytes);
             Debug.Log(response);
         }
 
@@ -30,8 +39,8 @@ public class Client : MonoBehaviour
         void Update () {
 
         }
-    */
     
+    /*
     void Start()
     {
         StartCoroutine(Post("http://192.168.1.140:8000/"));
@@ -42,7 +51,6 @@ public class Client : MonoBehaviour
 
     }
 
-
     IEnumerator Post(string url)
     {
         // HEADERはDictionaryで記述
@@ -52,9 +60,10 @@ public class Client : MonoBehaviour
 
         // LitJsonを使いJSONデータを生成
         LitJson.JsonData data = new LitJson.JsonData();
-        data["pepperX"] = 1.0;
-        data["pepperY"] = 0.0;
-        data["pepperTheta"] = 0.0;
+        data["x"] = 1.0;
+        data["y"] = 0.0;
+        data["theta"] = 0.0;
+        data["stop_flg"] = 0.0;
         // シリアライズする(LitJson.JsonData→JSONテキスト)
         string postJsonStr = data.ToJson();
         byte[] postBytes = Encoding.Default.GetBytes(postJsonStr);
@@ -62,6 +71,7 @@ public class Client : MonoBehaviour
         // 送信開始
         WWW www = new WWW(url, postBytes, header);
         yield return www;
+        Debug.Log(www.text);
 
         // 成功
         if (www.error == "")
@@ -75,7 +85,7 @@ public class Client : MonoBehaviour
             Debug.Log(www.error);
         }
     }
-    
+    */
     /*
     void Start()
     {
@@ -168,6 +178,32 @@ public class Client : MonoBehaviour
         yield return request.Send();
 
         Debug.Log("Status Code: " + request.responseCode);
+    }
+    */
+    /*
+    void Start()
+    {
+        string url = "http://192.168.1.140:8000/";
+
+        System.Net.WebClient wc = new System.Net.WebClient();
+        //NameValueCollectionの作成
+        System.Collections.Specialized.NameValueCollection ps =
+            new System.Collections.Specialized.NameValueCollection();
+        //送信するデータ（フィールド名と値の組み合わせ）を追加
+        ps.Add("word", "インターネット");
+        ps.Add("id", "1");
+        //データを送信し、また受信する
+        byte[] resData = wc.UploadValues(url, ps);
+        wc.Dispose();
+
+        //受信したデータを表示する
+        string resText = System.Text.Encoding.UTF8.GetString(resData);
+        Debug.Log(resText);
+    }
+
+    void Upload()
+    {
+
     }
     */
 }
