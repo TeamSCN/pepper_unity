@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
+using System.Text;
 using UnityEngine;
 
 public class Patrol : MonoBehaviour {
@@ -14,21 +16,24 @@ public class Patrol : MonoBehaviour {
     private float pepperSpeed = 2f;
     private float timer; //TimerSetにて活動限界を設定
     private bool timeOut = false;
+    private String uri = "http://192.168.1.140:8000"; //ここにpepperのURIを指定
 
     public class JSONClass
     {
         public double x;
         public double y;
         public double theta;
+        public bool stop_flg;
+        public bool photo_flg;
     }
 
 
     void Start()
     {
         agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
-        //startPosition = agent.transform.position;
+        startPosition = agent.transform.position;
         // TODO ここTangoから入力
-        startPosition.Set(3.4f, 0f, -1.55f);
+        //startPosition.Set(3.4f, 0f, -1.55f);
         agent.transform.position = startPosition;
         pastPosition = startPosition;
         // Tangoから向きをとれるならそれでも良い
@@ -38,7 +43,7 @@ public class Patrol : MonoBehaviour {
         // 初期設定
         // autoBrakingをtrueにするとオブジェクトが目的地の前でブレーキをかけるようになる
         agent.autoBraking = false;
-        agent.stoppingDistance = 0.5f;
+        agent.stoppingDistance = 0.2f;
         agent.speed = pepperSpeed;
 
         Debug.Log("Hello, pepper");
@@ -49,7 +54,7 @@ public class Patrol : MonoBehaviour {
     void GotoNextPoint()
     {
         //タイマーリセット
-        TimerSet();
+        //TimerSet();
 
         // 目的地が設定されていない場合
         if (points.Count == 0)
@@ -89,6 +94,7 @@ public class Patrol : MonoBehaviour {
         destPoint++;
     }
 
+    /*
     void TimeCounter()
     {
         timer -= Time.deltaTime;
@@ -101,28 +107,31 @@ public class Patrol : MonoBehaviour {
         timeOut = false;
         timer = 2f;
     }
+    */
 
     void Update()
     {
         //タイマー設置
-        TimeCounter();
+        //TimeCounter();
 
         // agentが目的地に着いたら待機して
         // pepperとagentの距離が小さければGotoNextPoint、大きければGoForIt
-        if (agent.remainingDistance < 0.5f && destPoint + 1 <= points.Count + 2)
+        if (agent.remainingDistance < 0.2f && destPoint + 1 <= points.Count + 2)
         {
             Debug.Log("Reached");
-            Debug.Log(pastRotation);
+            Debug.Log(pastRotation - 90);
             Debug.Log(agent.transform.position - pastPosition);
 
             // pepperの座標系に合わせてMoveToへの引数を変換
-            double pepperX = (agent.transform.position - pastPosition).x * (Math.Cos((pastRotation) * (Math.PI / 180)))
-                - (agent.transform.position - pastPosition).z * Math.Sin((pastRotation) * (Math.PI / 180));
-            double pepperY = (agent.transform.position - pastPosition).x * (Math.Sin((pastRotation) * (Math.PI / 180)))
-                + (agent.transform.position - pastPosition).z * Math.Cos((pastRotation) * (Math.PI / 180));
+            double pepperX = (agent.transform.position - pastPosition).x * (Math.Cos((pastRotation - 90) * (Math.PI / 180)))
+                - (agent.transform.position - pastPosition).z * Math.Sin((pastRotation - 90) * (Math.PI / 180));
+            double pepperY = (agent.transform.position - pastPosition).x * (Math.Sin((pastRotation - 90) * (Math.PI / 180)))
+                + (agent.transform.position - pastPosition).z * Math.Cos((pastRotation - 90) * (Math.PI / 180));
             Debug.Log(pepperX + ", " + pepperY);
 
-            Debug.Log(SetJSON(pepperX, pepperY, pastRotation));
+            String json = SetJSON(pepperX, pepperY, agent.transform.eulerAngles.y - 90, 0, 1); //0:false, 1:true
+            Debug.Log(json);
+            //Send2pepper(json);
 
             pastRotation = agent.transform.eulerAngles.y;
             pastPosition = agent.transform.position;
@@ -130,6 +139,7 @@ public class Patrol : MonoBehaviour {
         }
         // タイムアウトしたら現在地をもらってから行くべき場所へ
         // 障害物があるときは回避行動がとれるとベター
+        /*
         else if (timeOut)
         {
             Debug.Log("Time Up!!");
@@ -140,36 +150,57 @@ public class Patrol : MonoBehaviour {
             Debug.Log(agent.transform.position - pastPosition);
 
             // pepperの座標系に合わせてMoveToへの引数を変換
-            float pepperX = (float)((agent.transform.position - pastPosition).x * (Math.Cos((pastRotation) * (Math.PI / 180)))
-                - (agent.transform.position - pastPosition).z * Math.Sin((pastRotation) * (Math.PI / 180)));
-            float pepperY = (float)((agent.transform.position - pastPosition).x * (Math.Sin((pastRotation) * (Math.PI / 180)))
-                + (agent.transform.position - pastPosition).z * Math.Cos((pastRotation) * (Math.PI / 180)));
+            float pepperX = (float)((agent.transform.position - pastPosition).x * (Math.Cos((pastRotation - 90) * (Math.PI / 180)))
+                - (agent.transform.position - pastPosition).z * Math.Sin((pastRotation - 90) * (Math.PI / 180)));
+            float pepperY = (float)((agent.transform.position - pastPosition).x * (Math.Sin((pastRotation - 90) * (Math.PI / 180)))
+                + (agent.transform.position - pastPosition).z * Math.Cos((pastRotation - 90) * (Math.PI / 180)));
             Debug.Log(pepperX + ", " + pepperY);
 
-            Debug.Log(SetJSON(pepperX, pepperY, pastRotation));
+            Debug.Log(SetJSON(pepperX, pepperY, agent.transform.eulerAngles.y - 90));
 
             pastRotation = agent.transform.eulerAngles.y;
             pastPosition = agent.transform.position;
             TimerSet();
             agent.speed = pepperSpeed;
         }
+        */
         // 最初の位置に戻ってきたら、初期化して再びpepperからの通信を待つ
         else if (destPoint + 1 > points.Count + 2)
         {
             Debug.Log("Everything has been done.");
-            TimerSet();
+            //TimerSet();
             destPoint = 0;
             Start();
         }
     }
 
-    public String SetJSON(double x, double y, double theta)
+    public String SetJSON(double x, double y, double theta, int stop_flg, int photo_flg)
     {
+        /*
         JSONClass unityObject = new JSONClass();
         unityObject.x = x;
         unityObject.y = y;
         unityObject.theta = theta;
+        unityObject.stop_flg = stop_flg;
+        unityObject.photo_flg = photo_flg;
         string json = JsonUtility.ToJson(unityObject);
+        */
+        String json = "{\"0\":{\"x\":" + x + ", \"y\":" + y + ", \"theta\":" + theta + "}, " +
+            "\"stop_flg\":" + stop_flg + ", \"photo_flg\":" + photo_flg + ", " +
+            "\"dest_x\":0.0, \"dest_y\":0.0}";
         return json;
+    }
+
+    public void Send2pepper(String json)
+    {
+        byte[] postBytes = Encoding.Default.GetBytes(json);
+
+        WebClient webClient = new WebClient();
+        webClient.Headers[HttpRequestHeader.ContentType] = "application/json;charset=UTF-8";
+        webClient.Headers[HttpRequestHeader.Accept] = "application/json";
+        webClient.Encoding = Encoding.UTF8;
+
+        byte[] response = webClient.UploadData(new Uri(uri), "POST", postBytes);
+        Debug.Log(response);
     }
 }

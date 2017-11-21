@@ -13,26 +13,35 @@ public class Client : MonoBehaviour
         void Start () {
         
             //ここにpepperのURIを指定
-            String uri = "http://192.168.1.140:8001";
+            String uri = "http://192.168.1.140:8000";
         //String uri = "http://www.yamanjo.net/knowledge/internet/internet_09.html";
         //JSONを記述
-        //String content = "{'x':0.0, 'y':0.0, 'theta':0.0, 'stop_flg':0}";
+        String content = "{\"0\":{\"x\" : 0.0, \"y\":0.0, \"theta\":0.0}, \"stop_flg\":0, \"photo_flg\":1, \"dest_x\":0.0, \"dest_y\":0.0}";
+        /*
         LitJson.JsonData content = new LitJson.JsonData();
-        content["x"] = 1.0;
-        content["y"] = 0.0;
-        content["theta"] = 0.0;
-        content["stop_flg"] = 0.0;
-        Debug.Log(content);
+        IDictionary<String, double> map = new Dictionary<String, double>();
+        map.Add("x", 0.0);
+        map.Add("y", 0.0);
+        map.Add("theta", 0.0);
+        //content["0"] =  map;
+        content["stop_flg"] = 0;
+        content["photo_flg"] = 1;
+        content["dest_x"] = 0.0;
+        content["dest_y"] = 0.0;
         string postJsonStr = content.ToJson();
-        byte[] postBytes = Encoding.Default.GetBytes(postJsonStr);
+        Debug.Log(postJsonStr);
+        */
+        //byte[] postBytes = Encoding.Default.GetBytes(postJsonStr);
+        byte[] postBytes = Encoding.Default.GetBytes(content);
+        Debug.Log(content);
 
         WebClient webClient = new WebClient();
             webClient.Headers[HttpRequestHeader.ContentType] = "application/json;charset=UTF-8";
             webClient.Headers[HttpRequestHeader.Accept] = "application/json";
             webClient.Encoding = Encoding.UTF8;
             
-            byte[] response = webClient.UploadData(new Uri(uri), "POST", postBytes);
-            Debug.Log(response);
+            //byte[] response = webClient.UploadData(new Uri(uri), "POST", postBytes);
+            //Debug.Log(response);
         }
 
         // Update is called once per frame
